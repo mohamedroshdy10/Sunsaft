@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دليل أهالي صنصفط</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            background: #f0f2f5;
+            color: #1a1a2e;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #16213e, #0f3460);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .header h1 { font-size: 1.6rem; margin-bottom: 4px; }
+        .header p { font-size: 0.85rem; opacity: 0.8; }
+
+        .page { display: none; }
+        .page.active { display: block; }
+
+        .add-btn {
+            position: fixed;
+            bottom: 25px;
+            left: 25px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #e94560;
+            color: white;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(233,69,96,0.4);
+            z-index: 99;
+            transition: transform 0.2s;
+        }
+        .add-btn:hover { transform: scale(1.1); }
+
+        .search-bar {
+            padding: 15px 20px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            direction: rtl;
+            outline: none;
+        }
+        .search-bar input:focus { border-color: #0f3460; }
+
+        .stats {
+            display: flex;
+            gap: 10px;
+            padding: 15px 20px;
+            overflow-x: auto;
+        }
+        .stat-card {
+            background: white;
+            padding: 12px 18px;
+            border-radius: 12px;
+            min-width: 100px;
+            text-align: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .stat-card .num { font-size: 1.5rem; font-weight: bold; color: #0f3460; }
+        .stat-card .label { font-size: 0.75rem; color: #666; margin-top: 2px; }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 0 20px 10px;
+            overflow-x: auto;
+        }
+        .filter-tab {
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            background: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .filter-tab.active {
+            background: #0f3460;
+            color: white;
+            border-color: #0f3460;
+        }
+
+        .cards {
+            padding: 15px 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            padding-bottom: 100px;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .card:hover { transform: translateY(-2px); }
+        .card-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .card-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #e0e7ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: #0f3460;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .card-name { font-size: 1rem; font-weight: 600; }
+        .card-specialty { font-size: 0.8rem; color: #e94560; font-weight: 500; }
+        .card-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        .badge-here { background: #d4edda; color: #155724; }
+        .badge-away { background: #f8d7da; color: #721c24; }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .empty-state .icon { font-size: 3rem; margin-bottom: 15px; }
+
+        /* ===== Detail Modal ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: white;
+            border-radius: 20px 20px 0 0;
+            width: 100%;
+            max-width: 500px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 25px 20px;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .modal-close {
+            float: left;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+        }
+        .modal-avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            background: #e0e7ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #0f3460;
+            overflow: hidden;
+        }
+        .modal-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .modal-name { text-align: center; font-size: 1.3rem; font-weight: 700; }
+        .modal-specialty { text-align: center; color: #e94560; font-weight: 600; margin-bottom: 20px; }
+        .modal-info {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .modal-info-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+        .modal-info-row:last-child { border: none; }
+        .modal-info-row .label { color: #888; min-width: 80px; }
+        .modal-info-row a { color: #0f3460; text-decoration: none; font-weight: 600; }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .modal-actions button {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-edit { background: #e0e7ff; color: #0f3460; }
+        .btn-delete { background: #f8d7da; color: #721c24; }
+        .btn-call { background: #d4edda; color: #155724; }
+
+        /* ===== PIN Modal ===== */
+        .pin-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 300;
+            align-items: center;
+            justify-content: center;
+        }
+        .pin-overlay.show { display: flex; }
+        .pin-box {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            width: 300px;
+            text-align: center;
+        }
+        .pin-box h3 { margin-bottom: 10px; font-size: 1rem; }
+        .pin-box p { font-size: 0.8rem; color: #666; margin-bottom: 15px; }
+        .pin-box input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.2rem;
+            letter-spacing: 8px;
+            outline: none;
+        }
+        .pin-box input:focus { border-color: #0f3460; }
+        .pin-box .pin-btns { display: flex; gap: 10px; margin-top: 15px; }
+        .pin-box .pin-btns button {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .pin-confirm { background: #0f3460; color: white; }
+        .pin-cancel { background: #eee; color: #333; }
+        .pin-error { color: #e94560; font-size: 0.8rem; margin-top: 8px; display: none; }
+
+        /* ===== Form Page ===== */
+        .form-page {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .form-header h2 { font-size: 1.2rem; }
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #0f3460;
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #333;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            direction: rtl;
+            outline: none;
+            font-family: inherit;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus { border-color: #0f3460; }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .form-group .hint { font-size: 0.75rem; color: #999; margin-top: 4px; }
+
+        .photo-upload {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .photo-preview {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: #e0e7ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-upload label {
+            padding: 8px 16px;
+            background: #e0e7ff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: #0f3460;
+            font-weight: 600;
+        }
+        .photo-upload input[type="file"] { display: none; }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #16213e, #0f3460);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .submit-btn:hover { opacity: 0.9; }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 400;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #ddd;
+            border-top-color: #0f3460;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-top: 10px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>دليل أهالي صنصفط</h1>
+        <p>نعرف بعض .. نستفيد من بعض</p>
+    </div>
+
+    <!-- ===== Main Page ===== -->
+    <div id="mainPage" class="page active">
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="ابحث بالاسم أو التخصص..." oninput="renderCards()">
+        </div>
+        <div class="stats" id="statsBar"></div>
+        <div class="filter-tabs" id="filterTabs"></div>
+        <div id="loadingMain" class="loading">جاري التحميل</div>
+        <div class="cards" id="cardsContainer"></div>
+        <div class="empty-state" id="emptyState" style="display:none;">
+            <div class="icon">👥</div>
+            <p id="emptyText">مفيش حد مسجل لسه<br>اضغط + علشان تضيف أول شخص</p>
+        </div>
+        <button class="add-btn" onclick="showForm()">+</button>
+    </div>
+
+    <!-- ===== Form Page ===== -->
+    <div id="formPage" class="page">
+        <div class="form-page">
+            <div class="form-header">
+                <h2 id="formTitle">تسجيل جديد</h2>
+                <button class="back-btn" onclick="showMain()">&#8594;</button>
+            </div>
+
+            <div class="form-group">
+                <div class="photo-upload">
+                    <div class="photo-preview" id="photoPreview">📷</div>
+                    <label for="photoInput">اختار صورة</label>
+                    <input type="file" id="photoInput" accept="image/*" onchange="previewPhoto(event)">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>الاسم *</label>
+                <input type="text" id="nameInput" placeholder="الاسم بالكامل">
+            </div>
+
+            <div class="form-group">
+                <label>رقم التليفون *</label>
+                <input type="tel" id="phoneInput" placeholder="01xxxxxxxxx">
+            </div>
+
+            <div class="form-group">
+                <label>التخصص / الشغل *</label>
+                <input type="text" id="specialtyInput" placeholder="مثال: سباك، نجار، مدرس، دكتور...">
+            </div>
+
+            <div class="form-group">
+                <label>تفاصيل أكتر</label>
+                <textarea id="detailsInput" placeholder="اكتب أي تفاصيل عن شغلك أو خبرتك..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>موجود في البلد حاليا؟</label>
+                <select id="inVillageInput">
+                    <option value="yes">أيوه، موجود</option>
+                    <option value="no">لا، مش موجود</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>المواعيد المتاحة</label>
+                <input type="text" id="scheduleInput" placeholder="مثال: من 9 الصبح لـ 5 العصر">
+            </div>
+
+            <div class="form-group">
+                <label>رقم سري (4 أرقام) *</label>
+                <input type="password" id="pinInput" maxlength="4" pattern="[0-9]{4}" placeholder="هتحتاجه لو عايز تعدل أو تمسح بياناتك" inputmode="numeric">
+                <div class="hint">احفظ الرقم ده كويس - مفيش طريقة ترجعه لو نسيته</div>
+            </div>
+
+            <input type="hidden" id="editId" value="">
+
+            <button class="submit-btn" id="submitBtn" onclick="savePerson()">حفظ</button>
+        </div>
+    </div>
+
+    <!-- ===== Detail Modal ===== -->
+    <div class="modal-overlay" id="detailModal" onclick="closeDetail(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeDetailModal()">✕</button>
+            <div class="modal-avatar" id="modalAvatar"></div>
+            <div class="modal-name" id="modalName"></div>
+            <div class="modal-specialty" id="modalSpecialty"></div>
+            <div class="modal-info" id="modalInfo"></div>
+            <div class="modal-actions" id="modalActions"></div>
+        </div>
+    </div>
+
+    <!-- ===== PIN Modal ===== -->
+    <div class="pin-overlay" id="pinModal">
+        <div class="pin-box">
+            <h3 id="pinTitle">ادخل الرقم السري</h3>
+            <p id="pinDesc">ادخل الـ 4 أرقام اللي اخترتهم وقت التسجيل</p>
+            <input type="password" id="pinCheckInput" maxlength="4" inputmode="numeric" placeholder="----">
+            <div class="pin-error" id="pinError">الرقم السري غلط</div>
+            <div class="pin-btns">
+                <button class="pin-confirm" onclick="confirmPin()">تأكيد</button>
+                <button class="pin-cancel" onclick="closePinModal()">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let allPeople = [];
+        let activeFilter = 'all';
+        let pendingAction = null; // { type: 'edit'|'delete', id: number }
+
+        // ===== API =====
+        async function fetchPeople() {
+            try {
+                const res = await fetch('/api/people');
+                allPeople = await res.json();
+                document.getElementById('loadingMain').style.display = 'none';
+                renderCards();
+            } catch (e) {
+                document.getElementById('loadingMain').textContent = 'حصل مشكلة في التحميل - حاول تاني';
+            }
+        }
+
+        // ===== Pages =====
+        function showForm(id) {
+            document.getElementById('mainPage').classList.remove('active');
+            document.getElementById('formPage').classList.add('active');
+            clearForm();
+
+            if (id) {
+                document.getElementById('formTitle').textContent = 'تعديل البيانات';
+                document.getElementById('pinInput').style.display = 'none';
+                document.getElementById('pinInput').parentElement.querySelector('label').style.display = 'none';
+                document.getElementById('pinInput').parentElement.querySelector('.hint').style.display = 'none';
+                const person = allPeople.find(p => p.id === id);
+                if (person) {
+                    document.getElementById('editId').value = person.id;
+                    document.getElementById('nameInput').value = person.name;
+                    document.getElementById('phoneInput').value = person.phone;
+                    document.getElementById('specialtyInput').value = person.specialty;
+                    document.getElementById('detailsInput').value = person.details || '';
+                    document.getElementById('inVillageInput').value = person.in_village;
+                    document.getElementById('scheduleInput').value = person.schedule || '';
+                    if (person.photo) {
+                        document.getElementById('photoPreview').innerHTML = `<img src="${person.photo}">`;
+                    }
+                }
+            } else {
+                document.getElementById('formTitle').textContent = 'تسجيل جديد';
+                document.getElementById('pinInput').style.display = '';
+                document.getElementById('pinInput').parentElement.querySelector('label').style.display = '';
+                document.getElementById('pinInput').parentElement.querySelector('.hint').style.display = '';
+            }
+        }
+
+        function showMain() {
+            document.getElementById('formPage').classList.remove('active');
+            document.getElementById('mainPage').classList.add('active');
+            fetchPeople();
+        }
+
+        // ===== Render =====
+        function renderCards() {
+            const search = document.getElementById('searchInput').value.trim().toLowerCase();
+            const container = document.getElementById('cardsContainer');
+            const emptyState = document.getElementById('emptyState');
+
+            let filtered = allPeople;
+            if (search) {
+                filtered = filtered.filter(p =>
+                    p.name.toLowerCase().includes(search) ||
+                    p.specialty.toLowerCase().includes(search) ||
+                    (p.details && p.details.toLowerCase().includes(search))
+                );
+            }
+            if (activeFilter === 'here') filtered = filtered.filter(p => p.in_village === 'yes');
+            else if (activeFilter === 'away') filtered = filtered.filter(p => p.in_village === 'no');
+            else if (activeFilter !== 'all') filtered = filtered.filter(p => p.specialty === activeFilter);
+
+            // Stats
+            const here = allPeople.filter(p => p.in_village === 'yes').length;
+            const away = allPeople.filter(p => p.in_village === 'no').length;
+            document.getElementById('statsBar').innerHTML = `
+                <div class="stat-card"><div class="num">${allPeople.length}</div><div class="label">إجمالي</div></div>
+                <div class="stat-card"><div class="num">${here}</div><div class="label">في البلد</div></div>
+                <div class="stat-card"><div class="num">${away}</div><div class="label">برّه</div></div>
+            `;
+
+            // Filters
+            const specialties = [...new Set(allPeople.map(p => p.specialty))];
+            document.getElementById('filterTabs').innerHTML = `
+                <div class="filter-tab ${activeFilter==='all'?'active':''}" onclick="setFilter('all')">الكل</div>
+                <div class="filter-tab ${activeFilter==='here'?'active':''}" onclick="setFilter('here')">في البلد</div>
+                <div class="filter-tab ${activeFilter==='away'?'active':''}" onclick="setFilter('away')">برّه</div>
+                ${specialties.map(s => `<div class="filter-tab ${activeFilter===s?'active':''}" onclick="setFilter('${s.replace(/'/g, "\\'")}')">${s}</div>`).join('')}
+            `;
+
+            // Cards
+            if (filtered.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                document.getElementById('emptyText').innerHTML = allPeople.length > 0
+                    ? 'مفيش نتائج للبحث ده'
+                    : 'مفيش حد مسجل لسه<br>اضغط + علشان تضيف أول شخص';
+            } else {
+                emptyState.style.display = 'none';
+                container.innerHTML = filtered.map(p => `
+                    <div class="card" onclick="showDetail(${p.id})">
+                        <div class="card-top">
+                            <div class="card-avatar">
+                                ${p.photo ? `<img src="${p.photo}">` : p.name.charAt(0)}
+                            </div>
+                            <div>
+                                <div class="card-name">${esc(p.name)}</div>
+                                <div class="card-specialty">${esc(p.specialty)}</div>
+                            </div>
+                        </div>
+                        <span class="card-badge ${p.in_village==='yes'?'badge-here':'badge-away'}">
+                            ${p.in_village==='yes' ? '✅ موجود في البلد' : '❌ مش موجود'}
+                        </span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function setFilter(f) { activeFilter = f; renderCards(); }
+
+        // ===== Detail Modal =====
+        function showDetail(id) {
+            const p = allPeople.find(x => x.id === id);
+            if (!p) return;
+
+            document.getElementById('modalAvatar').innerHTML = p.photo
+                ? `<img src="${p.photo}">` : p.name.charAt(0);
+            document.getElementById('modalName').textContent = p.name;
+            document.getElementById('modalSpecialty').textContent = p.specialty;
+
+            let info = `
+                <div class="modal-info-row">
+                    <span class="label">📱 التليفون</span>
+                    <a href="tel:${p.phone}">${p.phone}</a>
+                </div>
+            `;
+            if (p.details) info += `
+                <div class="modal-info-row">
+                    <span class="label">📝 التفاصيل</span>
+                    <span>${esc(p.details)}</span>
+                </div>
+            `;
+            if (p.schedule) info += `
+                <div class="modal-info-row">
+                    <span class="label">🕐 المواعيد</span>
+                    <span>${esc(p.schedule)}</span>
+                </div>
+            `;
+            info += `
+                <div class="modal-info-row">
+                    <span class="label">📍 الحالة</span>
+                    <span>${p.in_village === 'yes' ? '✅ موجود في البلد' : '❌ مش موجود حاليا'}</span>
+                </div>
+            `;
+            document.getElementById('modalInfo').innerHTML = info;
+
+            document.getElementById('modalActions').innerHTML = `
+                <button class="btn-call" onclick="window.open('tel:${p.phone}')">📞 اتصل</button>
+                <button class="btn-edit" onclick="askPin(${p.id}, 'edit')">✏️ تعديل</button>
+                <button class="btn-delete" onclick="askPin(${p.id}, 'delete')">🗑️ مسح</button>
+            `;
+
+            document.getElementById('detailModal').classList.add('show');
+        }
+
+        function closeDetail(e) {
+            if (e.target === e.currentTarget) closeDetailModal();
+        }
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('show');
+        }
+
+        // ===== PIN =====
+        function askPin(id, type) {
+            pendingAction = { id, type };
+            document.getElementById('pinCheckInput').value = '';
+            document.getElementById('pinError').style.display = 'none';
+            document.getElementById('pinTitle').textContent = type === 'edit' ? 'تعديل البيانات' : 'مسح البيانات';
+            document.getElementById('pinDesc').textContent = 'ادخل الـ 4 أرقام اللي اخترتهم وقت التسجيل';
+            document.getElementById('pinModal').classList.add('show');
+            setTimeout(() => document.getElementById('pinCheckInput').focus(), 100);
+        }
+
+        function closePinModal() {
+            document.getElementById('pinModal').classList.remove('show');
+            pendingAction = null;
+        }
+
+        async function confirmPin() {
+            const pin = document.getElementById('pinCheckInput').value;
+            if (pin.length !== 4) {
+                document.getElementById('pinError').textContent = 'لازم 4 أرقام';
+                document.getElementById('pinError').style.display = 'block';
+                return;
+            }
+
+            if (!pendingAction) return;
+
+            if (pendingAction.type === 'delete') {
+                try {
+                    const res = await fetch(`/api/people/${pendingAction.id}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ pin })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        document.getElementById('pinError').textContent = 'الرقم السري غلط';
+                        document.getElementById('pinError').style.display = 'block';
+                        return;
+                    }
+                    closePinModal();
+                    closeDetailModal();
+                    showToast('تم المسح بنجاح');
+                    fetchPeople();
+                } catch (e) {
+                    showToast('حصل مشكلة - حاول تاني');
+                }
+            } else if (pendingAction.type === 'edit') {
+                try {
+                    const res = await fetch(`/api/people/${pendingAction.id}/verify-pin`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ pin })
+                    });
+                    if (!res.ok) {
+                        document.getElementById('pinError').textContent = 'الرقم السري غلط';
+                        document.getElementById('pinError').style.display = 'block';
+                        return;
+                    }
+                    sessionStorage.setItem('edit_pin', pin);
+                    const editId = pendingAction.id;
+                    closePinModal();
+                    closeDetailModal();
+                    showForm(editId);
+                } catch (e) {
+                    showToast('حصل مشكلة - حاول تاني');
+                }
+            }
+        }
+
+        // ===== Save =====
+        async function savePerson() {
+            const name = document.getElementById('nameInput').value.trim();
+            const phone = document.getElementById('phoneInput').value.trim();
+            const specialty = document.getElementById('specialtyInput').value.trim();
+            const details = document.getElementById('detailsInput').value.trim();
+            const inVillage = document.getElementById('inVillageInput').value;
+            const schedule = document.getElementById('scheduleInput').value.trim();
+            const editId = document.getElementById('editId').value;
+            const pinField = document.getElementById('pinInput').value.trim();
+
+            if (!name || !phone || !specialty) {
+                showToast('من فضلك املا الاسم والتليفون والتخصص');
+                return;
+            }
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = 'جاري الحفظ...';
+
+            const fd = new FormData();
+            fd.append('name', name);
+            fd.append('phone', phone);
+            fd.append('specialty', specialty);
+            fd.append('details', details);
+            fd.append('in_village', inVillage);
+            fd.append('schedule', schedule);
+
+            const fileInput = document.getElementById('photoInput');
+            if (fileInput.files[0]) {
+                fd.append('photo', fileInput.files[0]);
+            } else {
+                fd.append('keep_photo', 'true');
+            }
+
+            try {
+                if (editId) {
+                    const pin = sessionStorage.getItem('edit_pin') || '';
+                    fd.append('pin', pin);
+                    const res = await fetch(`/api/people/${editId}`, { method: 'PUT', body: fd });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        showToast(data.error || 'حصل مشكلة');
+                        btn.disabled = false;
+                        btn.textContent = 'حفظ';
+                        return;
+                    }
+                    sessionStorage.removeItem('edit_pin');
+                    showToast('تم التعديل بنجاح');
+                } else {
+                    if (!pinField || pinField.length !== 4 || !/^\d{4}$/.test(pinField)) {
+                        showToast('الرقم السري لازم يكون 4 أرقام');
+                        btn.disabled = false;
+                        btn.textContent = 'حفظ';
+                        return;
+                    }
+                    fd.append('pin', pinField);
+                    const res = await fetch('/api/people', { method: 'POST', body: fd });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        showToast(data.error || 'حصل مشكلة');
+                        btn.disabled = false;
+                        btn.textContent = 'حفظ';
+                        return;
+                    }
+                    showToast('تم التسجيل بنجاح');
+                }
+                showMain();
+            } catch (e) {
+                showToast('حصل مشكلة في الاتصال - حاول تاني');
+            }
+            btn.disabled = false;
+            btn.textContent = 'حفظ';
+        }
+
+        // ===== Photo Preview =====
+        function previewPhoto(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                document.getElementById('photoPreview').innerHTML = `<img src="${ev.target.result}">`;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ===== Helpers =====
+        function clearForm() {
+            ['nameInput','phoneInput','specialtyInput','detailsInput','scheduleInput','pinInput','editId'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            document.getElementById('inVillageInput').value = 'yes';
+            document.getElementById('photoPreview').innerHTML = '📷';
+            document.getElementById('photoInput').value = '';
+        }
+
+        function esc(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        // ===== Init =====
+        fetchPeople();
+    </script>
+</body>
+</html>

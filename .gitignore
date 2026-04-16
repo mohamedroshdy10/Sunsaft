@@ -1,0 +1,5 @@
+node_modules/
+uploads/
+sunsaft.db
+.claude/
+sunsaft.db*
