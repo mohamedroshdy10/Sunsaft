@@ -5,11 +5,12 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// Ensure uploads directory
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
+// Data directory (persistent on Render, local otherwise)
+const dataDir = process.env.NODE_ENV === 'production' && fs.existsSync('/data') ? '/data' : __dirname;
+const uploadsDir = path.join(dataDir, 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 // Middleware
 app.use(express.json());
@@ -34,7 +35,7 @@ const upload = multer({
 });
 
 // Database
-const db = new Database(path.join(__dirname, 'sunsaft.db'));
+const db = new Database(path.join(dataDir, 'sunsaft.db'));
 db.pragma('journal_mode = WAL');
 
 db.exec(`
